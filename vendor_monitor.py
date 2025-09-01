@@ -3,7 +3,7 @@ import requests
 from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 from dotenv import load_dotenv
-
+from zoneinfo import ZoneInfo
 # Load environment variables from .env file
 load_dotenv()
 
@@ -84,12 +84,16 @@ def check_vendor_status():
             except TimeoutError:
                 print("The specific 'quotaMsg' element was not found on the page.")
 
+            # Get the current time in IST for the timestamp
+            ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
+            timestamp = ist_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+
             if quota_exceeded_found:
-                message = f"✅ Status at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: 'All Empanelled Vendors Quota Exceeded'. No action needed."
+                message = f"✅ Status at {timestamp}: 'All Empanelled Vendors Quota Exceeded'. No action needed."
                 print(message)
                 send_telegram_notification(message)
             else:
-                message = f"🚨 ACTION REQUIRED at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Vendor status requires manual review. The 'Quota Exceeded' message was NOT found."
+                message = f"🚨 ACTION REQUIRED at {timestamp}: Vendor status requires manual review. The 'Quota Exceeded' message was NOT found."
                 print(message)
                 send_telegram_notification(message)
 
