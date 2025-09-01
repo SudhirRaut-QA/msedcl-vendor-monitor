@@ -127,7 +127,7 @@ def check_vendor_status():
             if quota_exceeded_found:
                 message = f"✅ Status at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: 'All Empanelled Vendors Quota Exceeded'. No action needed."
                 print(message)
-                 send_telegram_notification(message)
+                # send_telegram_notification(message)
             else:
                 message = f"🚨 ACTION REQUIRED at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Vendor status requires manual review. The 'Quota Exceeded' message was NOT found."
                 print(message)
