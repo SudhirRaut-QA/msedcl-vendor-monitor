@@ -89,11 +89,11 @@ def check_vendor_status():
             timestamp = ist_time.strftime('%Y-%m-%d %H:%M:%S %Z')
 
             if quota_exceeded_found:
-                message = f"✅ Status at {timestamp}: 'All Empanelled Vendors Quota Exceeded'. No action needed."
+                message = f"✅ Status at {timestamp}: 'All Empanelled Vendors Quota Exceeded'. कोणताही विक्रेता उपलब्ध नाही"
                 print(message)
                 send_telegram_notification(message)
             else:
-                message = f"🚨 ACTION REQUIRED at {timestamp}: Vendor status requires manual review. The 'Quota Exceeded' message was NOT found."
+                message = f"🚨 ACTION REQUIRED at {timestamp}:********** विक्रेता उपलब्ध आहे. <br> कृपया तपासा आणि अर्ज करा.**********"
                 print(message)
                 send_telegram_notification(message)
 
