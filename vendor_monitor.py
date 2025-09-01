@@ -68,7 +68,7 @@ def check_vendor_status():
     with sync_playwright() as p:
         print("Launching browser...")
         # Use headless=False for debugging, True for production/automation
-        browser = p.chromium.launch(headless=False) 
+        browser = p.chromium.launch(headless=True) 
         page = browser.new_page()
         
         # State variable to track if the specific "quota exceeded" message is found
