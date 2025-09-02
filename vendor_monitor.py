@@ -23,10 +23,10 @@ def send_telegram_notification(message):
         return
 
     api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
+    payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': message, 'parse_mode': 'HTML'}
     
     try:
-        response = requests.post(api_url, json=payload)
+        response = requests.post(api_url, json=payload, verify=False)
         if response.status_code == 200:
             print("Notification sent successfully!")
         else:
@@ -41,7 +41,7 @@ def check_vendor_status():
         try:
             print("Launching browser...")
             # For GitHub Actions, headless must be True. For local debugging, set to False.
-            browser = p.chromium.launch(headless=True) 
+            browser = p.chromium.launch(headless=False) 
             page = browser.new_page()
             
             quota_exceeded_found = False
@@ -89,11 +89,11 @@ def check_vendor_status():
             timestamp = ist_time.strftime('%Y-%m-%d %H:%M:%S %Z')
 
             if quota_exceeded_found:
-                message = f"✅ Status at {timestamp}: 'All Empanelled Vendors Quota Exceeded'. कोणताही विक्रेता उपलब्ध नाही"
+                message = f"<b>❌</b> Status at {timestamp}: 'All Empanelled Vendors Quota Exceeded'. \nकोणताही विक्रेता उपलब्ध नाही"
                 print(message)
-                send_telegram_notification(message)
+                #send_telegram_notification(message)
             else:
-                message = f"🚨 ACTION REQUIRED at {timestamp}:********** विक्रेता उपलब्ध आहे. <br> कृपया तपासा आणि अर्ज करा.**********"
+                message = f"🚨 ACTION REQUIRED at {timestamp}:<b>********** विक्रेता उपलब्ध आहे. \n कृपया तपासा आणि अर्ज करा.**********</b>"
                 print(message)
                 send_telegram_notification(message)
 
