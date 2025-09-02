@@ -41,7 +41,7 @@ def check_vendor_status():
         try:
             print("Launching browser...")
             # For GitHub Actions, headless must be True. For local debugging, set to False.
-            browser = p.chromium.launch(headless=False) 
+            browser = p.chromium.launch(headless=True) 
             page = browser.new_page()
             
             quota_exceeded_found = False
