@@ -2,12 +2,14 @@ name: MSEDCL Vendor Monitor
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # Changed to a more realistic 5-minute interval
+    # At 02:30 UTC (8:00 AM IST) every day
+    - cron: '30 2 * * *'
   workflow_dispatch:
 
 jobs:
   run-monitor:
     runs-on: ubuntu-latest
+    timeout-minutes: 355 # 5 hours 55 minutes
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
