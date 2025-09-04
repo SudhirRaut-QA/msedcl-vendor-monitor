@@ -83,7 +83,7 @@ def check_vendor_status(page, status):
         if status['quota_exceeded_found'] or page_quota_found:
             message = f"<b>❌</b> Status at {timestamp}: 'All Empanelled Vendors Quota Exceeded'. \nकोणताही विक्रेता उपलब्ध नाही"
             print(message)
-            send_telegram_notification(message) # This was commented out in your last version
+            #send_telegram_notification(message) # This was commented out in your last version
         else:
             message = f"🚨 ACTION REQUIRED at {timestamp}:<b>********** विक्रेता उपलब्ध आहे. \n कृपया तपासा आणि अर्ज करा.**********</b>"
             print(message)
