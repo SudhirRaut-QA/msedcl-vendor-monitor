@@ -1,6 +1,7 @@
 import os
 import requests
 import time
+import json
 from datetime import datetime, timedelta
 from playwright.sync_api import sync_playwright, TimeoutError
 from dotenv import load_dotenv
@@ -36,6 +37,52 @@ def send_telegram_notification(message):
             print(f"Failed to send notification. Status Code: {response.status_code}, Response: {response.text}")
     except Exception as e:
         print(f"An error occurred while sending the notification: {e}")
+
+def send_photo_notification(message, photo_path):
+    """Sends a photo with a caption and interactive buttons to Telegram."""
+    print(f"Sending photo notification: {message}")
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("ERROR: Telegram credentials not found in environment variables.")
+        return
+
+    # --- Define the interactive buttons ---
+    # Construct a URL that attempts to pre-fill the beneficiary ID. Note: This cannot click the search button.
+    enhanced_url = f"{URL}&beneficiaryId={BENEFICIARY_ID}"
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "View Website", "url": enhanced_url},
+            ]
+        ]
+    }
+    reply_markup = json.dumps(keyboard)
+    # ------------------------------------
+
+    api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'caption': message,
+        'parse_mode': 'HTML',
+        'reply_markup': reply_markup
+    }
+    
+    try:
+        with open(photo_path, 'rb') as photo_file:
+            files = {'photo': photo_file}
+            # The verify=False is important for corporate networks
+            response = requests.post(api_url, data=payload, files=files, verify=False)
+        
+        if response.status_code == 200:
+            print("Photo notification sent successfully!")
+        else:
+            print(f"Failed to send photo notification. Status Code: {response.status_code}, Response: {response.text}")
+    except Exception as e:
+        print(f"An error occurred while sending the photo notification: {e}")
+    finally:
+        # Clean up the screenshot file after sending
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
+            print(f"Removed screenshot file: {photo_path}")
 
 def check_vendor_status(page, status):
     """Navigates, interacts, and checks the vendor status on the given page."""
@@ -87,12 +134,44 @@ def check_vendor_status(page, status):
         else:
             message = f"🚨 ACTION REQUIRED at {timestamp}:<b>********** विक्रेता उपलब्ध आहे. \n कृपया तपासा आणि अर्ज करा.**********</b>"
             print(message)
-            send_telegram_notification(message)
+            
+            # --- Force dropdown to be visible for screenshot ---
+            try:
+                vendor_dropdown = page.locator("#VendorCode")
+                vendor_dropdown.wait_for(state="visible", timeout=5000)
+                
+                # Count the options to set the size attribute
+                option_count = vendor_dropdown.locator("option").count()
+                
+                if option_count > 1:
+                    # Use JavaScript to change the select element to a listbox, making all options visible
+                    vendor_dropdown.evaluate(f"(element) => element.size = {option_count}")
+                    print(f"Expanded dropdown to show all {option_count} options for screenshot.")
+                    # Give the browser a moment to redraw the page
+                    page.wait_for_timeout(1000)
+                else:
+                    print("Dropdown found, but no vendor options were available to expand.")
+
+            except Exception as dropdown_error:
+                print(f"Could not find or interact with vendor dropdown: {dropdown_error}")
+            # ----------------------------------------------------
+            
+            # Take a screenshot and send a photo notification
+            screenshot_path = "vendor_available.png"
+            page.screenshot(path=screenshot_path)
+            send_photo_notification(message, screenshot_path)
 
     except Exception as e:
         print(f"An error occurred during the check: {e}")
         error_message = f"⚠️ An error occurred in the script for beneficiary `{BENEFICIARY_ID}`. Error: {e}"
-        send_telegram_notification(error_message)
+        # Take a screenshot on error and send it
+        error_screenshot_path = "error_screenshot.png"
+        try:
+            page.screenshot(path=error_screenshot_path)
+            send_photo_notification(error_message, error_screenshot_path)
+        except Exception as screenshot_error:
+            print(f"Could not take or send screenshot on error: {screenshot_error}")
+            send_telegram_notification(error_message) # Fallback to text
 
 def main():
     """Main function to run the monitoring loop."""
@@ -124,7 +203,7 @@ def main():
         try:
             print("Launching browser for the session...")
             # Headless must be True for GitHub Actions, can be False for local debugging
-            browser = p.chromium.launch(headless=True) 
+            browser = p.chromium.launch(headless=False) 
             page = browser.new_page()
 
             # --- Set up the listener once, outside the loop ---
@@ -155,6 +234,7 @@ def main():
         except Exception as e:
             print(f"A critical error occurred in the main loop: {e}")
             error_message = f"💥 The monitoring script has crashed. Error: {e}"
+            # Cannot take a screenshot here as the browser may have crashed
             send_telegram_notification(error_message)
         finally:
             if browser:
