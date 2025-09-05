@@ -2,4 +2,3 @@ playwright
 requests
 python-dotenv
 tzdata
-python-telegram-bot[job-queue]
